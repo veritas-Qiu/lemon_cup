@@ -272,7 +272,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.update:
-        match_ids = get_match_ids(76561198130026890)
+        match_ids = get_match_ids()
         if match_ids:
             match_details = get_match_datas(match_ids)
             with open('match_details.json', 'w', encoding='utf-8') as f:
