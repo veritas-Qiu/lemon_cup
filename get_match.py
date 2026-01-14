@@ -269,8 +269,8 @@ def get_user_stats():
     md_output += "| 排名 | 英雄 | 胜 | 负 | 总场次 | 胜率 |\n"
     md_output += "| --- | --- | --- | --- | --- | --- |\n"
     
-    # Sort heroes by win rate (descending) then by total games (descending)
-    sorted_heroes = sorted(hero_stats.items(), key=lambda x: (x[1]['wins']/x[1]['total'] if x[1]['total']>0 else 0, x[1]['total']), reverse=True)
+    # Sort heroes by total games (descending) then by win rate (descending)
+    sorted_heroes = sorted(hero_stats.items(), key=lambda x: (x[1]['total'], x[1]['wins']/x[1]['total'] if x[1]['total']>0 else 0), reverse=True)
 
     for i, (hero, stats) in enumerate(sorted_heroes):
         win_rate = (stats['wins'] / stats['total'] * 100) if stats['total'] > 0 else 0
