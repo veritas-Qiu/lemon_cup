@@ -95,7 +95,7 @@ def get_match_datas(match_ids):
             if 'result' in data and len(data['result']) > 0:
                 # Assuming the first result is the one we want
                 match_result = data['result'][0]
-                if 'data' in match_result and match_result['data']['players'][0]['items'] != []:
+                if 'data' in match_result and match_result['data']['players'][0]['items'] != [] and match_result['data']['players'][6]['items'] != []:
                     match_detail = match_result['data']
                     players = match_detail.get('players', [])
                     
