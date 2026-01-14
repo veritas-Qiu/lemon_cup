@@ -16,51 +16,66 @@ STEAM_ID = "76561198130026890"
 SEASON_START_DATE = "20251222"
 
 def get_match_ids():
-    
-    url = f"https://gwapi.pwesports.cn/appdatacenter/dota/match/matchResult?mySteamId={STEAM_ID}&pageSize=50&steamId={STEAM_ID}&page=1"
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-        "token": TOKEN
-    }
+    filtered_match_ids = []
+    page = 1
+    max_page = 5
 
-    try:
-        response = requests.get(url, headers=headers)
-        response.raise_for_status()  # Check for HTTP errors
-        
-        # Try to parse as JSON
+    while page <= max_page:
+        url = f"https://gwapi.pwesports.cn/appdatacenter/dota/match/matchResult?mySteamId={STEAM_ID}&pageSize=50&steamId={STEAM_ID}&page={page}"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+            "token": TOKEN
+        }
+
         try:
-            data = response.json()
+            response = requests.get(url, headers=headers)
+            response.raise_for_status()  # Check for HTTP errors
             
-            filtered_match_ids = []
-            
-            # Navigate to result -> matchList
-            if 'result' in data and isinstance(data['result'], dict):
-                match_list = data['result'].get('matchList', [])
+            # Try to parse as JSON
+            try:
+                data = response.json()
                 
-                for match in match_list:
-                    level = match.get('level')
-                    end_day = match.get('endDay')
+                # Navigate to result -> matchList
+                if 'result' in data and isinstance(data['result'], dict):
+                    match_list = data['result'].get('matchList', [])
                     
-                    # Check conditions: level is "职业联赛" and endDay >= season start date
-                    if level == "职业联赛" and end_day and end_day >= SEASON_START_DATE:
-                        filtered_match_ids.append(match.get('matchId'))
-                
-                print(filtered_match_ids)
-                return filtered_match_ids
-                
-            else:
-                print("Unexpected JSON structure: 'result' not found or invalid format")
-                # print(json.dumps(data, indent=2, ensure_ascii=False))
-                return []
-                
-        except ValueError:
-            print("Response is not JSON")
-            print(response.text[:500]) # Print first 500 chars if not JSON
-            return []
-        
-    except requests.exceptions.RequestException as e:
-        print(f"An error occurred: {e}")
-        return []
+                    if not match_list:
+                        break
+                    
+                    should_continue = True
+
+                    for match in match_list:
+                        level = match.get('level')
+                        end_day = match.get('endDay')
+                        
+                        if end_day and end_day < SEASON_START_DATE:
+                            should_continue = False
+                        
+                        # Check conditions: level is "职业联赛" and endDay >= season start date
+                        if level == "职业联赛" and end_day and end_day >= SEASON_START_DATE:
+                            filtered_match_ids.append(match.get('matchId'))
+                    
+                    if not should_continue:
+                        break
+
+                    page += 1
+                    time.sleep(0.5)
+                    
+                else:
+                    print("Unexpected JSON structure: 'result' not found or invalid format")
+                    break
+                    
+            except ValueError:
+                print("Response is not JSON")
+                print(response.text[:500]) # Print first 500 chars if not JSON
+                break
+            
+        except requests.exceptions.RequestException as e:
+            print(f"An error occurred: {e}")
+            break
+
+    print(filtered_match_ids)
+    return filtered_match_ids
 
 def get_match_datas(match_ids):
     headers = {
@@ -80,7 +95,7 @@ def get_match_datas(match_ids):
             if 'result' in data and len(data['result']) > 0:
                 # Assuming the first result is the one we want
                 match_result = data['result'][0]
-                if 'data' in match_result:
+                if 'data' in match_result and match_result['data']['players'][0]['items'] != []:
                     match_detail = match_result['data']
                     players = match_detail.get('players', [])
                     
@@ -263,7 +278,7 @@ def get_user_stats():
             
     print(md_output)
     
-    with open('leaderboard.md', 'w', encoding='utf-8') as f:
+    with open('index.md', 'w', encoding='utf-8') as f:
         f.write(md_output)
 
 if __name__ == "__main__":
